@@ -18,12 +18,15 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
+[image1]: ./output_images/undistorted_warped_chessboard.png "Undistorted"
+[image2]: ./test_images/test1.png "Test Image 1"
+[image3]: ./output_images/undistorted_compare_test1.png "Road undistorted"
+[image4]: ./output_images/sobel_colorChannel_test1.png "Road Transformed"
+[image5]: ./output_images/binary_warped_compare.png "Warp Example"
+[image6]: ./output_images/lane_lines.png "Fit Visual"
+[image7]: ./output_images/lanes_lines_margin_window.png "Fit Visual with margin window"
+[image8]: ./output_images/lane_lines_unwarped.png "Output"
+[image9]: ./output_images/sobel_output.png "Output"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -35,11 +38,12 @@ The goals / steps of this project are the following:
 ####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
 
 You're reading it!
+
 ###Camera Calibration
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained in the first 2 code cells of the IPython notebook located in "./advanced-lane-finding.ipynb"
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
@@ -51,57 +55,85 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 
 ####1. Provide an example of a distortion-corrected image.
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
+
 ![alt text][image2]
-####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+
+You can find the results of undistort and comparison here:
 
 ![alt text][image3]
 
+####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+I used a combination of color and gradient thresholds to generate a binary image.  Here's an example of my output for this step. 
+
+![alt text][image4]
+
+Basically, I have used x & y gradients along with gradient magnitude and gradient direction to arrive at my first set of identifying lane lines using just the gradient. An example of this sobel output step can be seen below:
+
+![alt text][image9]
+
+The choice of Kernal Size I have settled with is 3, a threshold size from 20 to 100 and gradient magnitude threshold (100,150). I have used the threshold of (0, np.pi/2) for the gradient direction - same as the one in lecture notes.
+
+After the sobel filter, I have used the s color channel to further identify the lane lines. For this, I have used the threshold (90, 255). The low number of 90 allowed me to properly retain the lane lines, especially during the points where there are tree shadows on the highway. 
+
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes a function called `getWarped()`, which appears in the code cell below the "Perspective Transform" heading of the IPython notebook.  The `getWarped()` function takes as inputs an image (`img`), as well the binary image.  I chose the hardcode the source and destination points inside the 'getWarped()' in the following manner:
 
 ```
 src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
+    [[-330, image.shape[0]], 
+    [475, 470], 
+    [800, 470], 
+    [1570, image.shape[0]]])
 dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+    [[0, image.shape[0]], 
+    [0, 0], 
+    [image.shape[1], 0], 
+    [image.shape[1], image.shape[0]]])
 
 ```
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| -330, 720     | 0, 720        | 
+| 475, 470      | 0, 0          |
+| 800, 470      | 1280, 0       |
+| 1570, 720     | 1280, 720     |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
-![alt text][image4]
+![alt text][image5]
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+I have used the same sliding window method as in the lecture notes to find my lane lines. I felt this was a straight forward to approach the problem. The code can be found in the cell below the "Extract Lane Lines" title in the IPython notebook. I have used 3 functions: getNonZeroPixels(), generateFreshLanePoints() and extract_lines() to get the lanes lines. 
 
-![alt text][image5]
+getNonZeroPixels() is just a helper function to get the non-zero pixels from the binary unwarped image. generateFreshLanePoints() uses the histogram method along with the sliding window method to extract the lane lines. I have used a default of 9 windows, a margin of 100px and min pixels of 50 to identify the lane points from the binary image.
+
+extract_lines() takes in the indexes of all the left and right lane points to fit a polynomial through these points. What we get are the coefficients of 2nd degree polynomial that will help us get the x coordinate of the lane for any y value. We know that there could be more than one y value for a x point because of the lanes being vertical so it is better to get a polynomial that is a function of y instead of x. 
+
+The final lanes can be seen here:
+
+![alt text][image6]
+
+The search window of 100 pixels margin that we have seen earlier can be seen the image below with the windows in green. This will also help us identify the lane points in the next frame of the video without actually performing the generateFreshLanePoints() again. This is done inside the generateLanePointsFromPrevious() function in the cell below the "Extract Lanes from Previous Lanes" title.
+
+![alt text][image7]
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+I did this in the cell below the "Radius of Curvature and Vehicle Position" heading of the IPython Notebook. I have used the code snippets from the lecture notes to calculate the Radius of Curvature. Similar to Lecture notes, the radius of curvature is calculated at the max y position which will be the bottom of the image. Based on the the un-warped (bird's eye view) lane lines, the width of the lane lines in pixel space came up to 600px. 
+
+For the distance from center, I have calculated the x positions of both the left and right lanes at max y - which will be at the bottom of the image. With these x positions, I was able to get the lane center and then taking the x = 1280/2 = 640px as the vehicle center, I was able to check how many pixels the vehicle center was from the lane center. Multiplying that with the pixel to meter factor, we get the correct position of the vehicle from the center.
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step after the 'drawLane()' function which is after the "Draw Lane" heading of the IPython notebook.  Here is an example of my result on a test image:
 
-![alt text][image6]
+![alt text][image8]
+
+The drawLane() function takes in the image, binary warped image, the perspective transform matrix, along with the x & y points of the lane to create the polygon that will be our basis to create the lane projection. After the polygon is generated, it is transformed back to the original image space using inverse perspective Matrix and added to the original image.
 
 ---
 
