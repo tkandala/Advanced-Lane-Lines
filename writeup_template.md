@@ -54,6 +54,7 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 ###Pipeline (single images)
 
 ####1. Provide an example of a distortion-corrected image.
+
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 
 ![alt text][image2]
@@ -63,6 +64,7 @@ You can find the results of undistort and comparison here:
 ![alt text][image3]
 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+
 I used a combination of color and gradient thresholds to generate a binary image.  Here's an example of my output for this step. 
 
 ![alt text][image4]
@@ -77,7 +79,7 @@ After the sobel filter, I have used the s color channel to further identify the 
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `getWarped()`, which appears in the code cell below the "Perspective Transform" heading of the IPython notebook.  The `getWarped()` function takes as inputs an image (`img`), as well the binary image.  I chose the hardcode the source and destination points inside the 'getWarped()' in the following manner:
+The code for my perspective transform includes a function called `getWarped()`, which appears in the code cell below the "Perspective Transform" heading of the IPython notebook.  The `getWarped()` function takes as inputs an image (`img`), as well the binary image.  I chose the hardcode the source and destination points inside the '`getWarped()` in the following manner:
 
 ```
 src = np.float32(
@@ -107,17 +109,17 @@ I verified that my perspective transform was working as expected by drawing the 
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-I have used the same sliding window method as in the lecture notes to find my lane lines. I felt this was a straight forward to approach the problem. The code can be found in the cell below the "Extract Lane Lines" title in the IPython notebook. I have used 3 functions: getNonZeroPixels(), generateFreshLanePoints() and extract_lines() to get the lanes lines. 
+I have used the same sliding window method as in the lecture notes to find my lane lines. I felt this was a straight forward to approach the problem. The code can be found in the cell below the "Extract Lane Lines" title in the IPython notebook. I have used 3 functions: `getNonZeroPixels()`, `generateFreshLanePoints()` and `extract_lines()` to get the lanes lines. 
 
-getNonZeroPixels() is just a helper function to get the non-zero pixels from the binary unwarped image. generateFreshLanePoints() uses the histogram method along with the sliding window method to extract the lane lines. I have used a default of 9 windows, a margin of 100px and min pixels of 50 to identify the lane points from the binary image.
+`getNonZeroPixels()` is just a helper function to get the non-zero pixels from the binary unwarped image. `generateFreshLanePoints()` uses the histogram method along with the sliding window method to extract the lane lines. I have used a default of 9 windows, a margin of 100px and min pixels of 50 to identify the lane points from the binary image.
 
-extract_lines() takes in the indexes of all the left and right lane points to fit a polynomial through these points. What we get are the coefficients of 2nd degree polynomial that will help us get the x coordinate of the lane for any y value. We know that there could be more than one y value for a x point because of the lanes being vertical so it is better to get a polynomial that is a function of y instead of x. 
+`extract_lines()` takes in the indexes of all the left and right lane points to fit a polynomial through these points. What we get are the coefficients of 2nd degree polynomial that will help us get the x coordinate of the lane for any y value. We know that there could be more than one y value for a x point because of the lanes being vertical so it is better to get a polynomial that is a function of y instead of x. 
 
 The final lanes can be seen here:
 
 ![alt text][image6]
 
-The search window of 100 pixels margin that we have seen earlier can be seen the image below with the windows in green. This will also help us identify the lane points in the next frame of the video without actually performing the generateFreshLanePoints() again. This is done inside the generateLanePointsFromPrevious() function in the cell below the "Extract Lanes from Previous Lanes" title.
+The search window of 100 pixels margin that we have seen earlier can be seen the image below with the windows in green. This will also help us identify the lane points in the next frame of the video without actually performing the `generateFreshLanePoints()` again. This is done inside the `generateLanePointsFromPrevious()` function in the cell below the "Extract Lanes from Previous Lanes" title.
 
 ![alt text][image7]
 
@@ -129,7 +131,7 @@ For the distance from center, I have calculated the x positions of both the left
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step after the 'drawLane()' function which is after the "Draw Lane" heading of the IPython notebook.  Here is an example of my result on a test image:
+I implemented this step after the `drawLane()` function which is after the "Draw Lane" heading of the IPython notebook.  Here is an example of my result on a test image:
 
 ![alt text][image8]
 
@@ -149,5 +151,13 @@ Here's a [link to my video result](./project_video.mp4)
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.
+
+So I have used the techniques discussed in lecture notes and basically utilized the sample code from the notes to build up my pipeline to identify the lane lines. This was probably the easy step in getting to the solution quickly. With some tuning to the paramters, especially in the sobel and color channels, I was able to extract the lane lines pretty decently all throughout the video.
+
+As we can see, there are some wobly lane lines in the right lane when passing beside the tree shadows or when the road's surface switched from tar to concrete. We can tackle these issues in couple of ways.
+
+First, as we do during driving, or at least how I drive is that if the lane lines are not properly visible on one side, I will usually follow the other side of the lane line and try to stick to it so I don't go off lane. We can definetely do something like that here too. Since the left lane line is pretty solid throughout the whole video, we can just rely on it's line ploynomial to replicate the right lane line - based on the 600px width difference between the 2 lanes. This will remove the wobly effect we see from the frames.
+
+The other method which can be complicated is to have dynamic parameters that get tuned automatically based on the surroundings like when approaching shadow area. This is easy said than done because we will have to constantly monitor our surroundings and determine what our parameters are going to be. We can take a pre-defined set of parameters based on various conditions and use them to extract the lane lines. Probably this is more beneficial when driving during night times or when we cannnot rely completely on one sided lane to extract other lane.
 
