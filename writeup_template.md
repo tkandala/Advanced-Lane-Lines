@@ -19,7 +19,7 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image1]: ./output_images/undistorted_warped_chessboard.png "Undistorted"
-[image2]: ./test_images/test1.png "Test Image 1"
+[image2]: ./test_images/test1.jpg "Test Image 1"
 [image3]: ./output_images/undistorted_compare_test1.png "Road undistorted"
 [image4]: ./output_images/sobel_colorChannel_test1.png "Road Transformed"
 [image5]: ./output_images/binary_warped_compare.png "Warp Example"
